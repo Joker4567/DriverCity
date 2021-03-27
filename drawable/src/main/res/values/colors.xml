@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorTransparent">#00FFFFFF</color>
+    <color name="colorPrimary">#800064FF</color>
+    <color name="colorPrimaryLight">#0064FF</color>
+    <color name="colorLightHint">#9E9E9E</color>
+    <color name="colorWhite">#FFFFFF</color>
+    <color name="colorView">#80CCCCCC</color>
+    <color name="colorLightGray">#33ACACAC</color>
+    <color name="colorToolbarBackground">#800064FF</color>
+    <color name="colorItemBackground">#222F4A</color>
+    <color name="colorRegularText">#212121</color>
+    <color name="colorError">#F50808</color>
+</resources>

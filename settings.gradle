@@ -1,0 +1,6 @@
+include ':core-ui'
+include ':core-date'
+include ':drawable'
+include ':utils'
+include ':app'
+rootProject.name = "DriverCity"

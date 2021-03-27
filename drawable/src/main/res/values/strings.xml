@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DriverCity</string>
+    <string name="label_server_error">Ошибка соединения\n с сервером</string>
+    <string name="label_server_error_description">Ожидание ответа от сервера превышено, обратитесь к администратору</string>
+    <string name="label_common_error">Ошибка</string>
+    <string name="label_common_error_description">Что-то пошло не так. Пожалуйста, попробуйте еще раз</string>
+    <string name="label_connection_error">Ошибка соединения\n с сетью</string>
+    <string name="label_connection_error_description">Время ожидания соединения с сетью истекло. Пожалуйста, проверьте подключение и повторите попытку</string>
+    <string name="content_connection_error">Ошибка соединения</string>
+    <string name="btn_repeat">Повторить</string>
+    <string name="btn_ok">ОК</string>
+</resources>
