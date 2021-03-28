@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:name=".App"
@@ -30,6 +31,7 @@
             android:name="androidx.work.impl.WorkManagerInitializer"
             android:authorities="$com.anufriev.driver.workmanager-init"
             tools:node="remove" />
+        <service android:name="com.anufriev.core_ui.service.SyncService" android:exported="false" />
     </application>
 
 </manifest>

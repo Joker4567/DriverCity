@@ -1,6 +1,7 @@
 package com.anufriev.core_ui.activity.main
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
@@ -8,9 +9,11 @@ import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.view.isVisible
 import androidx.work.*
 import com.anufriev.core_date.storage.Pref
+import com.anufriev.core_ui.service.SyncService
 import com.anufriev.core_ui.work.SyncWorker
 import com.anufriev.utils.ext.getGPS
 import com.anufriev.utils.ext.observeLifeCycle
@@ -157,6 +160,10 @@ class MainActivity : AppCompatActivity(com.anufriev.drawable.R.layout.main_activ
             .build()
 
         WorkManager.getInstance(this).enqueue(workRequest)
+
+        val downloadIntent = Intent(this, SyncService::class.java)
+        downloadIntent.putExtra("stopService", false)
+        startService(downloadIntent)
     }
 
     private fun changeButtonStart(start:Boolean = true){
@@ -165,7 +172,9 @@ class MainActivity : AppCompatActivity(com.anufriev.drawable.R.layout.main_activ
     }
 
     private fun removePhoneWithStopService(){
-        mainViewModel.removePhone(applicationContext)
+        val downloadIntent = Intent(this, SyncService::class.java)
+        downloadIntent.putExtra("stopService", true)
+        startService(downloadIntent)
         WorkManager.getInstance(applicationContext).cancelUniqueWork(DOWNLOAD_WORK_ID)
     }
 

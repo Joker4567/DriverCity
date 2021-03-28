@@ -3,6 +3,7 @@ package com.anufriev.driver
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.anufriev.utils.platform.NotificationChannels
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -10,6 +11,8 @@ import javax.inject.Inject
 class App : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
+        //init notifier service
+        NotificationChannels.create(this)
     }
 
     @Inject
