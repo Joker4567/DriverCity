@@ -1,5 +1,6 @@
 package com.anufriev.core_date.api
 
+import com.anufriev.core_date.model.Driver
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.Body
@@ -26,6 +27,10 @@ interface DriveApi {
         204 No content, [нет записи]
         500 Internal server error (краш)
     */
-    @GET("api/organizations/phoneDriver/{phone}")
-    fun removePhone(@Path("phone") phone:String): Call<Unit>
+    @GET("api/organizations/phoneDriver/{phone}/{state}")
+    fun removePhone(@Path("phone") phone:String,
+                    @Path("state") state:Boolean): Call<Unit>
+
+    @GET("api/organizations/getState/{phone}")
+    fun getState(@Path("phone") phone:String) : Call<Object>
 }

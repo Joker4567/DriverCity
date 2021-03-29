@@ -5,16 +5,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.view.isVisible
-import androidx.work.*
 import com.anufriev.core_date.storage.Pref
+import com.anufriev.core_ui.activity.settings.SettingsActivity
 import com.anufriev.core_ui.service.SyncService
-import com.anufriev.core_ui.work.SyncWorker
+import com.anufriev.utils.Const
 import com.anufriev.utils.ext.getGPS
 import com.anufriev.utils.ext.observeLifeCycle
 import com.anufriev.utils.ext.toast
@@ -24,66 +24,83 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(com.anufriev.drawable.R.layout.main_activity) {
 
     private val mainViewModel by viewModels<MainViewModel>()
+    private lateinit var textState: TextView
+    private lateinit var btStart: Button
+    private lateinit var btStop: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        subscribe()
         bind()
-        initWorker()
+        subscribe()
     }
 
-    private fun subscribe(){
-        observeLifeCycle(mainViewModel.stateWork, {
-            if(it!!) toast("Выход на линию осуществлён") else toast("Выход с линии успешно произведён")
-        })
+    override fun onStart() {
+        super.onStart()
+        mainViewModel.getDriver(applicationContext)
     }
 
-    private fun bind(){
-        var textPhone = this.findViewById<TextView>(com.anufriev.drawable.R.id.edit_phone)
-        val radius = this.findViewById<TextView>(com.anufriev.drawable.R.id.etRadius)
-        Pref(context = applicationContext).phone?.let {
-            textPhone.setText(it)
-        }
-        this.findViewById<Button>(com.anufriev.drawable.R.id.btStart).setOnClickListener {
-            if(textPhone.text.isNotEmpty() && radius.text.isNotEmpty()) {
-                Pref(context = applicationContext).phone = textPhone.text.toString()
-                //Запуск сервиса с отправкой местоположения
+    private fun bind() {
+        textState = this.findViewById(com.anufriev.drawable.R.id.tvState)
+        textState.text = "Статус: в ожидании"
+        btStart = this.findViewById<Button>(com.anufriev.drawable.R.id.btStart)
+        btStart.setOnClickListener {
+            if (Pref(applicationContext).phone.isNullOrEmpty().not() &&
+                Pref(applicationContext).radius != 0
+            ) {
                 getGeo()
-            } else if(textPhone.text.isEmpty()) {
-                toast("Введите номер телефона для выхода на линию")
-            } else if(radius.text.isEmpty()){
-                toast("Введите радиус принятия заказа для выхода на линию")
+            } else if (Pref(applicationContext).phone.isNullOrEmpty()) {
+                toast("Введите номер телефона в настройках")
+            } else if (Pref(applicationContext).radius == 0) {
+                toast("Введите радиус принятия заказа в настройках")
             }
         }
-        this.findViewById<Button>(com.anufriev.drawable.R.id.btStop).setOnClickListener {
-            if(textPhone.text.isNotEmpty()){
-                Pref(context = applicationContext).phone = textPhone.text.toString()
-                //Остановка сервиса + удалить телефон из БД для звонков
+        btStop = this.findViewById<Button>(com.anufriev.drawable.R.id.btStop)
+        btStop.setOnClickListener {
+            if(Const.isActive) {
+                //Остановка сервиса
                 removePhoneWithStopService()
-                changeButtonStart(false)
-            } else {
-                toast("Введите номер телефона для выхода с линии")
             }
+            mainViewModel.stopDriver(applicationContext)
+            changeButtonStart(false)
+        }
+        this.findViewById<ImageView>(com.anufriev.drawable.R.id.ivSettings).setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+        changeButtonStart(false)
+        textState.setOnClickListener {
+            textState.text = "Статус: в ожидании"
+            mainViewModel.getDriver(applicationContext)
         }
     }
 
-    private fun initWorker(){
-        WorkManager.getInstance(this)
-            .getWorkInfosForUniqueWorkLiveData(DOWNLOAD_WORK_ID)
-            .observe(this, { if (it.isNotEmpty()) handleWorkInfo(it.first()) })
-    }
-
-    private fun handleWorkInfo(workInfo: WorkInfo) {
-        val isFinished = workInfo.state.isFinished
-        if (isFinished) {
-            toast("Геопозиция отправлена на сервер")
-        }
+    private fun subscribe() {
+        observeLifeCycle(mainViewModel.driver, {
+            it?.let {
+                textState.text =
+                    if (it.state)
+                        "Статус: зарегистрирован на линии"
+                    else
+                        "Статус: не зарегистрирован"
+                Const.isActive = it.state
+                changeButtonStart(it.state)
+            }
+        })
+        observeLifeCycle(mainViewModel.error, {
+            it?.let {
+                textState.text = "Статус: $it, нажмите на статус для повторной проверки"
+            }
+        })
+        observeLifeCycle(mainViewModel.stopDriver, {
+            it?.let {
+                textState.text = "Статус: $it"
+            }
+        })
     }
 
     override fun onRequestPermissionsResult(
@@ -119,7 +136,7 @@ class MainActivity : AppCompatActivity(com.anufriev.drawable.R.layout.main_activ
                 LocationServices.getFusedLocationProviderClient(applicationContext)
                     .getCurrentLocation(LocationRequest.PRIORITY_LOW_POWER, null)
                     .addOnSuccessListener {
-                        if(it != null) {
+                        if (it != null) {
                             startWorkSync()
                         } else {
                             toast("Не удалось получить местоположение")
@@ -143,48 +160,23 @@ class MainActivity : AppCompatActivity(com.anufriev.drawable.R.layout.main_activ
 
     private fun startWorkSync() {
         changeButtonStart()
-        val radius = this.findViewById<TextView>(com.anufriev.drawable.R.id.etRadius).text.toString()
-
-        val workData = workDataOf(
-            SyncWorker.KEY_RADIUS to radius
-        )
-
-        val workConstraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.NOT_ROAMING)
-            .build()
-
-        val workRequest = PeriodicWorkRequestBuilder<SyncWorker>(2, TimeUnit.MINUTES)
-            .setInputData(workData)
-            .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
-            .setConstraints(workConstraints)
-            .build()
-
-        WorkManager.getInstance(this).enqueue(workRequest)
-
         val downloadIntent = Intent(this, SyncService::class.java)
         downloadIntent.putExtra("stopService", false)
         startService(downloadIntent)
     }
 
-    private fun changeButtonStart(start:Boolean = true){
-        this.findViewById<Button>(com.anufriev.drawable.R.id.btStart).isVisible = !start
-        this.findViewById<Button>(com.anufriev.drawable.R.id.btStop).isVisible = start
+    private fun changeButtonStart(start: Boolean = true) {
+        btStart.isVisible = !start
+        btStop.isVisible = start
     }
 
-    private fun removePhoneWithStopService(){
+    private fun removePhoneWithStopService() {
         val downloadIntent = Intent(this, SyncService::class.java)
         downloadIntent.putExtra("stopService", true)
         startService(downloadIntent)
-        WorkManager.getInstance(applicationContext).cancelUniqueWork(DOWNLOAD_WORK_ID)
-    }
-
-    override fun onDestroy() {
-        removePhoneWithStopService()
-        super.onDestroy()
     }
 
     companion object {
         private const val CODE_MAP = 1023;
-        private const val DOWNLOAD_WORK_ID = "download_work"
     }
 }

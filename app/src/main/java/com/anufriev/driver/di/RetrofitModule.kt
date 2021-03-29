@@ -113,8 +113,7 @@ object RetrofitModule {
         return Retrofit.Builder()
             .client(client)
             .baseUrl(BuildConfig.API_ENDPOINT)
-            .addConverterFactory(MoshiConverterFactory.create())
-            .addConverterFactory(GsonConverterFactory.create(gson))
+            .addConverterFactory(GsonConverterFactory.create())
     }
 
     @Singleton

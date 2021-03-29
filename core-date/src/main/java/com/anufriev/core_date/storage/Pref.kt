@@ -30,8 +30,23 @@ class Pref(context: Context) {
         }
     }
 
+    var radius: Int
+        get() = sharedPreferences.getInt(KEY_RADIUS, 0)
+        set(value) {
+            sharedPreferences.edit {
+                putInt(KEY_RADIUS, value)
+            }
+        }
+
+    fun clearRadius() {
+        sharedPreferences.edit {
+            remove(KEY_RADIUS)
+        }
+    }
+
     companion object {
         const val FILE_NAME = "CityPreference"
+        const val KEY_RADIUS = "radius"
         const val KEY_PHONE = "phone"
     }
 }
