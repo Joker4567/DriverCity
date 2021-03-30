@@ -14,6 +14,7 @@ import com.anufriev.core_date.storage.Pref
 import com.anufriev.core_ui.R
 import com.anufriev.utils.Const
 import com.anufriev.utils.ext.getGPS
+import com.anufriev.utils.platform.DriverState
 import com.anufriev.utils.platform.NotificationChannels
 import com.anufriev.utils.platform.State
 import com.google.android.gms.location.LocationRequest
@@ -24,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.Duration
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -37,6 +39,7 @@ class SyncService : Service() {
         intent?.getBooleanExtra("stopService", true)?.let { isStopService ->
             if(isStopService){
                 Const.isActive = false
+                DriverState.changeStateDriver(3)
                 stopServiceWithNotification()
             } else {
                 Const.isActive = true
@@ -71,6 +74,7 @@ class SyncService : Service() {
                                             true,
                                             {
                                                 //Запись успешно добавлена
+                                                DriverState.changeStateDriver(2)
                                                 Timber.d("Запись с местоположением успешно обновлена")
                                             },
                                             {
@@ -82,6 +86,7 @@ class SyncService : Service() {
                                     }
                                 }
                             } else {
+                                DriverState.changeStateDriver(4)
                                 Timber.e("Не удалось получить местоположение")
                             }
                         }
@@ -89,7 +94,7 @@ class SyncService : Service() {
                         .addOnFailureListener { Timber.e("Запрос локации завершился неудачно") }
 
                 }
-                delay(3 * 1000 * 60)
+                delay(120000)
             }
         }
     }

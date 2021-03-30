@@ -12,7 +12,7 @@ android {
         applicationId = "com.anufriev.driver"
         minSdkVersion(rootProject.extra["minSdkVersion"] as Int)
         targetSdkVersion(rootProject.extra["compileSdkVersion"] as Int)
-        versionCode = 5
+        versionCode = 7
         versionName = "1.0"
     }
     buildTypes {

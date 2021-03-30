@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.anufriev.core_date.storage.Pref
 import com.anufriev.core_ui.activity.settings.SettingsActivity
 import com.anufriev.core_ui.service.SyncService
@@ -18,11 +19,15 @@ import com.anufriev.utils.Const
 import com.anufriev.utils.ext.getGPS
 import com.anufriev.utils.ext.observeLifeCycle
 import com.anufriev.utils.ext.toast
+import com.anufriev.utils.platform.DriverState
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -84,9 +89,9 @@ class MainActivity : AppCompatActivity(com.anufriev.drawable.R.layout.main_activ
             it?.let {
                 textState.text =
                     if (it.state)
-                        "Статус: зарегистрирован на линии"
+                        "Статус: в ожидании заказа"
                     else
-                        "Статус: не зарегистрирован"
+                        "Статус: снят с линии"
                 Const.isActive = it.state
                 changeButtonStart(it.state)
             }
@@ -101,6 +106,24 @@ class MainActivity : AppCompatActivity(com.anufriev.drawable.R.layout.main_activ
                 textState.text = "Статус: $it"
             }
         })
+        lifecycleScope.launch {
+            DriverState.stateDriver
+                .debounce(500)
+                .distinctUntilChanged()
+                .collect {
+                    when(it){
+                        2 -> {
+                            textState.text = "Статус: в ожидании заказа"
+                        }
+                        3 -> {
+                            textState.text = "Статус: снят с линии"
+                        }
+                        4 -> {
+                            textState.text = "Статус: не удалось получить местоположение"
+                        }
+                    }
+                }
+        }
     }
 
     override fun onRequestPermissionsResult(

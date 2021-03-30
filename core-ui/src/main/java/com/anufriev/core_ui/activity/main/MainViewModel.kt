@@ -38,7 +38,7 @@ class MainViewModel @Inject constructor(
         if(phone.isNullOrEmpty().not() && radius != 0){
             launchIO {
                 repository.changeStateDriver(phone!!, false, {
-                    stopDriver.postValue("не зарегистрирован")
+                    stopDriver.postValue("снят с линии")
                 }, ::error)
             }
         }
